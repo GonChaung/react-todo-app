@@ -1,54 +1,44 @@
 pipeline {
-    agent any
+  agent any
 
-    environment {
-        DOCKER_HUB_USER  = 'gonchaung'
-        IMAGE_NAME       = 'react-todo-app'
-        DOCKER_HUB_CREDS = 'docker-hub-credentials'
+  environment {
+    // Make Homebrew + Docker available to Jenkins service
+    PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+    DOCKER_HUB_USER  = 'gonchaung'
+    IMAGE_NAME       = 'finead-todo-app'
+    DOCKER_HUB_CREDS = 'docker-hub-credentials'
+  }
+
+  stages {
+    stage('Build') {
+      steps {
+        sh 'node -v'
+        sh 'npm -v'
+        sh 'npm ci'
+      }
     }
 
-    stages {
-        stage('Build') {
-            steps {
-                echo 'Building the application...'
-                sh 'npm ci'
-            }
-        }
-
-        stage('Test') {
-            steps {
-                echo 'Running unit tests...'
-                sh 'npm test'
-            }
-        }
-
-        stage('Containerize') {
-            steps {
-                echo 'Creating Docker image...'
-                sh "docker build -t ${DOCKER_HUB_USER}/${IMAGE_NAME}:latest ."
-            }
-        }
-
-        stage('Push') {
-            steps {
-                echo 'Logging into Docker Hub and pushing image...'
-                withCredentials([usernamePassword(
-                    credentialsId: "${DOCKER_HUB_CREDS}",
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
-                    sh "docker push ${DOCKER_HUB_USER}/${IMAGE_NAME}:latest"
-                }
-            }
-        }
+    stage('Test') {
+      steps {
+        sh 'npm test'
+      }
     }
 
-    post {
-        always {
-            echo 'Cleaning up workspace...'
-            sh "docker logout || true"
-            sh "docker rmi ${DOCKER_HUB_USER}/${IMAGE_NAME}:latest || true"
-        }
+    stage('Containerize') {
+      steps {
+        sh 'docker --version'
+        sh "docker build -t ${DOCKER_HUB_USER}/${IMAGE_NAME}:latest ."
+      }
     }
+
+    stage('Push') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: "${DOCKER_HUB_CREDS}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+          sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
+          sh "docker push ${DOCKER_HUB_USER}/${IMAGE_NAME}:latest"
+        }
+      }
+    }
+  }
 }
