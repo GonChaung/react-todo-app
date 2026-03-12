@@ -6,7 +6,7 @@ pipeline {
     PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
     DOCKER_HUB_USER  = 'gonchaung'
-    IMAGE_NAME       = 'preead-todo-app'
+    IMAGE_NAME       = 'pre-ead-todoapp'
     DOCKER_HUB_CREDS = 'docker-hub-credentials'
   }
 
